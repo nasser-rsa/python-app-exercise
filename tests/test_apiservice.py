@@ -9,14 +9,6 @@ import requests
 
 class TestApiService(unittest.TestCase):
     def setUp(self):
-        # Clean up CSV files in the storage folder before each test
-        storage_folder = os.path.join(os.getcwd(), 'storage')
-        if os.path.exists(storage_folder):
-            for file in os.listdir(storage_folder):
-                if file.endswith(".csv"):
-                    file_path = os.path.join(storage_folder, file)
-                    os.remove(file_path)
-
         self.good_todos = [
             {"id": 1, "userId": 1, "title": "Todo 1", "completed": False},
             {"id": 2, "userId": 1, "title": "Todo 2", "completed": True},
@@ -27,6 +19,15 @@ class TestApiService(unittest.TestCase):
             {"ID": 2, "UserID": 1, "Task": "Todo 2", "IsCompleted": True},
         ]
 
+    def tearDown(self):
+        # Call the ApiService.cleanup() method to remove the test_storage folder and its contents
+        test_storage_folder = os.path.join(os.getcwd(), 'test_storage')
+        if os.path.exists(test_storage_folder):
+            for file_name in os.listdir(test_storage_folder):
+                file_path = os.path.join(test_storage_folder, file_name)
+                os.remove(file_path)
+            os.rmdir(test_storage_folder)
+
     @patch('src.Services.ApiService.requests.get')
     def test_run(self, mock_get):
         # Mock the response object
@@ -35,12 +36,14 @@ class TestApiService(unittest.TestCase):
         mock_response.json.return_value = self.good_todos
         mock_get.return_value = mock_response
 
-        # Call the ApiService.run() method
-        api_service = src.Services.ApiService.ApiService()
+        # Call the ApiService.run() method with a custom storage folder
+        test_storage_folder = os.path.join(os.getcwd(), 'test_storage')
+        api_service = src.Services.ApiService.ApiService(
+            storage_folder=test_storage_folder)
         api_service.run()
 
-        # Assert that the CSV files are created successfully
-        storage_folder = os.path.join(os.getcwd(), 'storage')
+        # Assert that the storage folder is created
+        storage_folder = os.path.join(os.getcwd(), 'test_storage')
         self.assertTrue(os.path.exists(storage_folder))
 
         for todo in self.good_todos:
@@ -70,12 +73,14 @@ class TestApiService(unittest.TestCase):
         mock_response.raise_for_status.side_effect = None
         mock_get.return_value = mock_response
 
-        # Call the ApiService.run() method
-        api_service = src.Services.ApiService.ApiService()
+        # Call the ApiService.run() method with a custom storage folder
+        test_storage_folder = os.path.join(os.getcwd(), 'test_storage')
+        api_service = src.Services.ApiService.ApiService(
+            storage_folder=test_storage_folder)
         api_service.run()
 
         # Assert that the storage folder is created
-        storage_folder = os.path.join(os.getcwd(), 'storage')
+        storage_folder = os.path.join(os.getcwd(), 'test_storage')
         self.assertTrue(os.path.exists(storage_folder))
 
         # Assert that no CSV files are created due to the wrong keys in the response
@@ -93,12 +98,14 @@ class TestApiService(unittest.TestCase):
         mock_response.raise_for_status.side_effect = None
         mock_get.return_value = mock_response
 
-        # Call the ApiService.run() method
-        api_service = src.Services.ApiService.ApiService()
+        # Call the ApiService.run() method with a custom storage folder
+        test_storage_folder = os.path.join(os.getcwd(), 'test_storage')
+        api_service = src.Services.ApiService.ApiService(
+            storage_folder=test_storage_folder)
         api_service.run()
 
         # Assert that the storage folder is created
-        storage_folder = os.path.join(os.getcwd(), 'storage')
+        storage_folder = os.path.join(os.getcwd(), 'test_storage')
         self.assertTrue(os.path.exists(storage_folder))
 
         # Assert that no CSV files are created due to missing keys in the response
@@ -116,12 +123,14 @@ class TestApiService(unittest.TestCase):
             "404 Client Error: Not Found")
         mock_get.return_value = mock_response
 
-        # Call the ApiService.run() method
-        api_service = src.Services.ApiService.ApiService()
+        # Call the ApiService.run() method with a custom storage folder
+        test_storage_folder = os.path.join(os.getcwd(), 'test_storage')
+        api_service = src.Services.ApiService.ApiService(
+            storage_folder=test_storage_folder)
         api_service.run()
 
         # Assert that the storage folder is created
-        storage_folder = os.path.join(os.getcwd(), 'storage')
+        storage_folder = os.path.join(os.getcwd(), 'test_storage')
         self.assertTrue(os.path.exists(storage_folder))
 
         # Assert that no CSV files are created due to the error response
@@ -139,12 +148,14 @@ class TestApiService(unittest.TestCase):
             "500 Server Error")
         mock_get.return_value = mock_response
 
-        # Call the ApiService.run() method
-        api_service = src.Services.ApiService.ApiService()
+        # Call the ApiService.run() method with a custom storage folder
+        test_storage_folder = os.path.join(os.getcwd(), 'test_storage')
+        api_service = src.Services.ApiService.ApiService(
+            storage_folder=test_storage_folder)
         api_service.run()
 
         # Assert that the storage folder is created
-        storage_folder = os.path.join(os.getcwd(), 'storage')
+        storage_folder = os.path.join(os.getcwd(), 'test_storage')
         self.assertTrue(os.path.exists(storage_folder))
 
         # Assert that no CSV files are created due to the error response

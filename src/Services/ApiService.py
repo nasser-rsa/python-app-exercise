@@ -23,26 +23,40 @@ class ApiService:
         pass
 
     def run(self):
-        print('Running ApiService', file=stderr)
+        print('Running ApiService')
 
         if not os.path.exists(STORAGE_FOLDER):
             os.makedirs(STORAGE_FOLDER)
 
         todos = fetch_todos()
         if todos:
+            success = True  # Flag to track if any exception occurred
             for todo in todos:
-                todo_id = todo['id']
-                file_name = f"{datetime.now().strftime('%Y_%m_%d')}_{todo_id}.csv"
-                file_path = os.path.join(STORAGE_FOLDER, file_name)
-
                 try:
-                    with open(file_path, mode='w', newline='') as file:
-                        writer = csv.writer(file)
-                        writer.writerow(['id', 'userId', 'title', 'completed'])
-                        writer.writerow(
-                            [todo['id'], todo['userId'], todo['title'], todo['completed']])
-                except IOError as e:
-                    print(
-                        f"Error writing to file {file_name}: {e}", file=stderr)
+                    # Check for the required keys and handle errors gracefully
+                    todo_id = todo['id']
+                    user_id = todo['userId']
+                    title = todo['title']
+                    completed = todo['completed']
 
-            print("TODOs fetched and saved as CSV files successfully")
+                    file_name = f"{datetime.now().strftime('%Y_%m_%d')}_{todo_id}.csv"
+                    file_path = os.path.join(STORAGE_FOLDER, file_name)
+
+                    try:
+                        with open(file_path, mode='w', newline='') as file:
+                            writer = csv.writer(file)
+                            writer.writerow(
+                                ['id', 'userId', 'title', 'completed'])
+                            writer.writerow(
+                                [todo_id, user_id, title, completed])
+                    except IOError as e:
+                        print(
+                            f"Error writing to file {file_name}: {e}", file=stderr)
+                        success = False
+
+                except KeyError as e:
+                    print(f"Error processing todo: {e}", file=stderr)
+                    success = False
+
+            if success:
+                print("TODOs fetched and saved as CSV files successfully")

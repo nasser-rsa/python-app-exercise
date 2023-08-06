@@ -17,9 +17,14 @@ class TestApiService(unittest.TestCase):
                     file_path = os.path.join(storage_folder, file)
                     os.remove(file_path)
 
-        self.todos = [
+        self.good_todos = [
             {"id": 1, "userId": 1, "title": "Todo 1", "completed": False},
             {"id": 2, "userId": 1, "title": "Todo 2", "completed": True},
+        ]
+
+        self.wrong_todos = [
+            {"ID": 1, "UserID": 1, "Task": "Todo 1", "IsCompleted": False},
+            {"ID": 2, "UserID": 1, "Task": "Todo 2", "IsCompleted": True},
         ]
 
     @patch('src.Services.ApiService.requests.get')
@@ -27,7 +32,7 @@ class TestApiService(unittest.TestCase):
         # Mock the response object
         mock_response = MagicMock()
         mock_response.status_code = 200  # Successful response
-        mock_response.json.return_value = self.todos
+        mock_response.json.return_value = self.good_todos
         mock_get.return_value = mock_response
 
         # Call the ApiService.run() method
@@ -38,7 +43,7 @@ class TestApiService(unittest.TestCase):
         storage_folder = os.path.join(os.getcwd(), 'storage')
         self.assertTrue(os.path.exists(storage_folder))
 
-        for todo in self.todos:
+        for todo in self.good_todos:
             file_name = f"{datetime.now().strftime('%Y_%m_%d')}_{todo['id']}.csv"
             file_path = os.path.join(storage_folder, file_name)
             self.assertTrue(os.path.exists(file_path))
@@ -55,6 +60,52 @@ class TestApiService(unittest.TestCase):
                 self.assertEqual(int(data[1]), todo['userId'])
                 self.assertEqual(data[2], todo['title'])
                 self.assertEqual(data[3], str(todo['completed']))
+
+    @patch('src.Services.ApiService.requests.get')
+    def test_run_wrong_keys(self, mock_get):
+        # Mock the response object for good calls with wrong keys
+        mock_response = MagicMock()
+        mock_response.status_code = 200  # Successful response
+        mock_response.json.return_value = self.wrong_todos
+        mock_response.raise_for_status.side_effect = None
+        mock_get.return_value = mock_response
+
+        # Call the ApiService.run() method
+        api_service = src.Services.ApiService.ApiService()
+        api_service.run()
+
+        # Assert that the storage folder is created
+        storage_folder = os.path.join(os.getcwd(), 'storage')
+        self.assertTrue(os.path.exists(storage_folder))
+
+        # Assert that no CSV files are created due to the wrong keys in the response
+        for todo in self.wrong_todos:
+            file_name = f"{datetime.now().strftime('%Y_%m_%d')}_{todo['ID']}.csv"
+            file_path = os.path.join(storage_folder, file_name)
+            self.assertFalse(os.path.exists(file_path))
+
+    @patch('src.Services.ApiService.requests.get')
+    def test_run_empty_keys(self, mock_get):
+        # Mock the response object for wrong calls with missing keys
+        mock_response = MagicMock()
+        mock_response.status_code = 200  # Successful response
+        mock_response.json.return_value = [{}]  # Simulate missing keys
+        mock_response.raise_for_status.side_effect = None
+        mock_get.return_value = mock_response
+
+        # Call the ApiService.run() method
+        api_service = src.Services.ApiService.ApiService()
+        api_service.run()
+
+        # Assert that the storage folder is created
+        storage_folder = os.path.join(os.getcwd(), 'storage')
+        self.assertTrue(os.path.exists(storage_folder))
+
+        # Assert that no CSV files are created due to missing keys in the response
+        # Invalid file name due to missing ID
+        file_name = f"{datetime.now().strftime('%Y_%m_%d')}_.csv"
+        file_path = os.path.join(storage_folder, file_name)
+        self.assertFalse(os.path.exists(file_path))
 
     @patch('src.Services.ApiService.requests.get')
     def test_run_api_not_found_error(self, mock_get):
@@ -74,13 +125,13 @@ class TestApiService(unittest.TestCase):
         self.assertTrue(os.path.exists(storage_folder))
 
         # Assert that no CSV files are created due to the error response
-        for todo in self.todos:
+        for todo in self.good_todos:
             file_name = f"{datetime.now().strftime('%Y_%m_%d')}_{todo['id']}.csv"
             file_path = os.path.join(storage_folder, file_name)
             self.assertFalse(os.path.exists(file_path))
 
     @patch('src.Services.ApiService.requests.get')
-    def test_run_internal_server_error(self, mock_get):
+    def test_run_server_error(self, mock_get):
         # Mock the response object with a 500 status code
         mock_response = MagicMock()
         mock_response.status_code = 500  # Internal Server Error
@@ -97,7 +148,7 @@ class TestApiService(unittest.TestCase):
         self.assertTrue(os.path.exists(storage_folder))
 
         # Assert that no CSV files are created due to the error response
-        for todo in self.todos:
+        for todo in self.good_todos:
             file_name = f"{datetime.now().strftime('%Y_%m_%d')}_{todo['id']}.csv"
             file_path = os.path.join(storage_folder, file_name)
             self.assertFalse(os.path.exists(file_path))
